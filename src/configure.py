@@ -12,7 +12,7 @@ class BlenderCustomSettings:
 
     def __init__(self):
         self.ver = float(bpy.app.version_string[:4])  # ex: 2.83
-        self.supports = [2.83]  # サポートバージョン
+        self.supports = [2.83, 2.90]  # サポートバージョン
 
     # ================================================================
     # Utilities
@@ -64,11 +64,18 @@ class BlenderCustomSettings:
 
         # Denoising
         view_layer = bpy.context.view_layer
-        view_layer.cycles.use_denoising = True
-        view_layer.cycles.use_optix_denoising = True  # Use OptiX
-        view_layer.cycles.denoising_optix_input_passes = "RGB_ALBEDO"  # Color+Albedo
 
-        scene.cycles.preview_denoising = "NONE"  # or "OPTIX"
+        if self.ver <= 2.83:
+            view_layer.cycles.use_denoising = True
+            view_layer.cycles.use_optix_denoising = True  # Use OptiX
+            scene.cycles.preview_denoising = "NONE"  # or "OPTIX"
+
+        elif self.ver == 2.90:
+            scene.cycles.use_denoising = True
+            scene.cycles.denoiser = "OPTIX"  # Use OptiX
+            scene.cycles.use_preview_denoising = False
+
+        view_layer.cycles.denoising_optix_input_passes = "RGB_ALBEDO"  # Color+Albedo
 
         # Sampling
         scene.cycles.samples = 128
@@ -159,8 +166,11 @@ class BlenderCustomSettings:
         """
         pref = bpy.context.preferences
 
+        # Disable Auto-Save
+        pref.use_preferences_save = False
+
         # Interface > Display
-        pref.view.ui_scale = 1.05
+        pref.view.ui_scale = 1.05 if self.ver <= 2.83 else 1.0
         pref.view.ui_line_width = "AUTO"
         pref.view.show_splash = False
         pref.view.show_tooltips = True
